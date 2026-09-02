@@ -663,18 +663,18 @@
   // =================================
 
 
-  async function clearAllTickets() {
+  <script>
+
+async function clearAllTickets() {
 
   const confirmed = confirm(
-    "⚠️ 確定要清空所有號碼嗎？\n此操作無法復原！"
+    "⚠️ 確定要清空目前活動的所有號碼嗎？\n\n清空後下一個號碼將重新從 A001 開始。"
   );
 
   if (!confirmed) return;
 
 
-  const {
-    error
-  } = await supabaseClient.rpc(
+  const { error } = await supabaseClient.rpc(
     "clear_all_tickets"
   );
 
@@ -690,6 +690,23 @@
     return;
 
   }
+
+
+  document.getElementById(
+    "currentNumber"
+  ).textContent = "尚未叫號";
+
+
+  await loadTickets();
+
+
+  alert(
+    "✅ 所有號碼已清空\n下一個號碼將從 A001 開始"
+  );
+
+}
+
+</script>
 
 
   // 清空目前叫號畫面
