@@ -22,9 +22,7 @@
   <style>
 
     * {
-
       box-sizing: border-box;
-
     }
 
 
@@ -35,7 +33,6 @@
       padding: 30px;
 
       font-family:
-
         "Microsoft JhengHei",
         "Noto Sans TC",
         Arial,
@@ -48,7 +45,7 @@
 
     .container {
 
-      max-width: 1100px;
+      max-width: 1000px;
 
       margin: auto;
 
@@ -70,7 +67,7 @@
 
       color: #666;
 
-      margin-bottom: 30px;
+      margin-bottom: 25px;
 
     }
 
@@ -83,16 +80,15 @@
 
       background: white;
 
-      padding: 30px;
+      padding: 25px;
 
       border-radius: 15px;
 
       text-align: center;
 
-      margin-bottom: 25px;
+      margin-bottom: 20px;
 
       box-shadow:
-
         0 5px 20px rgba(0,0,0,.08);
 
     }
@@ -100,7 +96,7 @@
 
     .current-title {
 
-      font-size: 18px;
+      font-size: 16px;
 
       color: #666;
 
@@ -109,46 +105,42 @@
 
     .current-number {
 
-      font-size: 60px;
+      font-size: 48px;
 
       font-weight: bold;
 
       margin-top: 10px;
 
-      color: #111827;
-
     }
 
 
     /* =========================
-       鎖定狀態
+       系統狀態
     ========================= */
 
-    .lock-status {
+    .system-status {
 
       text-align: center;
 
-      margin-bottom: 20px;
-
-      font-size: 20px;
+      font-size: 16px;
 
       font-weight: bold;
 
-      min-height: 30px;
+      margin-bottom: 20px;
 
     }
 
 
-    .lock-status.locked {
+    .system-ready {
+
+      color: #15803d;
+
+    }
+
+
+    .system-locked {
 
       color: #dc2626;
-
-    }
-
-
-    .lock-status.ready {
-
-      color: #16a34a;
 
     }
 
@@ -165,7 +157,7 @@
 
       gap: 15px;
 
-      margin-bottom: 25px;
+      margin-bottom: 20px;
 
       flex-wrap: wrap;
 
@@ -183,7 +175,6 @@
       font-size: 16px;
 
       transition:
-
         opacity .2s,
         transform .15s;
 
@@ -191,6 +182,8 @@
 
 
     button:hover:not(:disabled) {
+
+      opacity: .88;
 
       transform: translateY(-2px);
 
@@ -240,7 +233,7 @@
 
       color: #666;
 
-      min-height: 25px;
+      min-height: 24px;
 
     }
 
@@ -254,11 +247,7 @@
       display: grid;
 
       grid-template-columns:
-
-        repeat(
-          auto-fill,
-          minmax(150px, 1fr)
-        );
+        repeat(auto-fill, minmax(150px, 1fr));
 
       gap: 15px;
 
@@ -273,16 +262,16 @@
 
       border-radius: 15px;
 
+      cursor: pointer;
+
       font-size: 28px;
 
       font-weight: bold;
 
       box-shadow:
-
         0 5px 15px rgba(0,0,0,.08);
 
       transition:
-
         transform .15s,
         box-shadow .15s;
 
@@ -294,7 +283,6 @@
       transform: translateY(-4px);
 
       box-shadow:
-
         0 10px 25px rgba(0,0,0,.15);
 
     }
@@ -315,19 +303,6 @@
     }
 
 
-    /* =========================
-       鎖定中的票券
-    ========================= */
-
-    .ticket.locked {
-
-      background: #e5e7eb;
-
-      color: #9ca3af;
-
-    }
-
-
     .empty {
 
       text-align: center;
@@ -342,8 +317,15 @@
 
 
     /* =========================
-       手機版
+       鎖定時的畫面效果
     ========================= */
+
+    .locked-overlay {
+
+      opacity: .55;
+
+    }
+
 
     @media (max-width: 600px) {
 
@@ -356,21 +338,10 @@
 
       .current-number {
 
-        font-size: 45px;
+        font-size: 40px;
 
       }
 
-
-      .ticket-grid {
-
-        grid-template-columns:
-
-          repeat(
-            2,
-            1fr
-          );
-
-      }
 
     }
 
@@ -379,21 +350,14 @@
 </head>
 
 
-
 <body>
 
 
 <div class="container">
 
 
-  <!-- =========================
-       標題
-  ========================= -->
-
   <h1>
-
     🎫 叫號管理後台
-
   </h1>
 
 
@@ -434,15 +398,15 @@
 
 
   <!-- =========================
-       鎖定倒數
+       系統狀態
   ========================= -->
 
   <div
-    id="lockStatus"
-    class="lock-status ready"
+    id="systemStatus"
+    class="system-status system-ready"
   >
 
-    ● 系統可以叫號
+    🟢 系統可以叫號
 
   </div>
 
@@ -456,8 +420,9 @@
 
 
     <button
+      id="refreshButton"
       class="refresh"
-      onclick="manualRefresh()"
+      onclick="refreshAll()"
     >
 
       🔄 重新整理
@@ -465,7 +430,9 @@
     </button>
 
 
+
     <button
+      id="resetButton"
       class="reset"
       onclick="clearAllTickets()"
     >
@@ -487,19 +454,16 @@
     id="statusMessage"
     class="status-message"
   >
-
   </div>
 
 
 
   <!-- =========================
-       等待號碼
+       等待中的號碼
   ========================= -->
 
   <h2>
-
     等待中的號碼
-
   </h2>
 
 
@@ -507,7 +471,6 @@
     id="ticketList"
     class="ticket-grid"
   >
-
   </div>
 
 
@@ -518,63 +481,324 @@
 <script>
 
 
-/* =================================
-   Supabase 設定
-================================= */
+// =====================================
+// Supabase 設定
+// =====================================
 
 
 const SUPABASE_URL =
-
   "https://ubrjcadpfdfymbjwubfg.supabase.co";
 
 
 const SUPABASE_KEY =
-
   "sb_publishable_0J9AWhVkRRYDehVffrmNdQ_jlOOqVAw";
 
 
 const supabaseClient =
-
   supabase.createClient(
-
     SUPABASE_URL,
-
     SUPABASE_KEY
-
   );
 
 
 
-/* =================================
-   全域變數
-================================= */
+// =====================================
+// 全域變數
+// =====================================
 
 
-let ticketsCache = [];
+let queueSettings = null;
 
-
-/* 資料庫鎖定到期時間 */
-
-let lockUntil = null;
-
-
-/* 倒數計時器 */
+let isCalling = false;
 
 let countdownTimer = null;
 
 
-/* 避免同一台電腦重複送出 */
 
-let callingInProgress = false;
-
-
-
-/* =================================
-   取得 queue_settings
-================================= */
+// =====================================
+// 判斷目前是否鎖定
+// =====================================
 
 
-async function getQueueSettings() {
+function isSystemLocked() {
+
+
+  if (
+    !queueSettings ||
+    !queueSettings.call_lock_until
+  ) {
+
+    return false;
+
+  }
+
+
+  const lockUntil =
+    new Date(
+      queueSettings.call_lock_until
+    );
+
+
+  const now =
+    new Date();
+
+
+  return lockUntil > now;
+
+
+}
+
+
+
+// =====================================
+// 取得剩餘秒數
+// =====================================
+
+
+function getRemainingSeconds() {
+
+
+  if (
+    !queueSettings ||
+    !queueSettings.call_lock_until
+  ) {
+
+    return 0;
+
+  }
+
+
+  const lockUntil =
+    new Date(
+      queueSettings.call_lock_until
+    );
+
+
+  const now =
+    new Date();
+
+
+  const diff =
+    lockUntil - now;
+
+
+  if (diff <= 0) {
+
+    return 0;
+
+  }
+
+
+  return Math.ceil(
+    diff / 1000
+  );
+
+
+}
+
+
+
+// =====================================
+// 更新系統鎖定畫面
+// =====================================
+
+
+function updateLockUI() {
+
+
+  const systemStatus =
+    document.getElementById(
+      "systemStatus"
+    );
+
+
+  const ticketList =
+    document.getElementById(
+      "ticketList"
+    );
+
+
+  const refreshButton =
+    document.getElementById(
+      "refreshButton"
+    );
+
+
+  const resetButton =
+    document.getElementById(
+      "resetButton"
+    );
+
+
+  const locked =
+    isSystemLocked();
+
+
+  const remaining =
+    getRemainingSeconds();
+
+
+
+  // =====================================
+  // 系統正在鎖定
+  // =====================================
+
+
+  if (locked) {
+
+
+    systemStatus.className =
+      "system-status system-locked";
+
+
+    systemStatus.textContent =
+      `🔴 系統正在叫號，${remaining} 秒後恢復`;
+
+
+    ticketList.classList.add(
+      "locked-overlay"
+    );
+
+
+    refreshButton.disabled = true;
+
+    resetButton.disabled = true;
+
+
+    document
+      .querySelectorAll(
+        ".ticket"
+      )
+      .forEach(
+        button => {
+
+          button.disabled = true;
+
+        }
+      );
+
+
+  }
+
+
+  // =====================================
+  // 系統可以叫號
+  // =====================================
+
+
+  else {
+
+
+    systemStatus.className =
+      "system-status system-ready";
+
+
+    systemStatus.textContent =
+      "🟢 系統可以叫號";
+
+
+    ticketList.classList.remove(
+      "locked-overlay"
+    );
+
+
+    refreshButton.disabled = false;
+
+    resetButton.disabled = false;
+
+
+    document
+      .querySelectorAll(
+        ".ticket"
+      )
+      .forEach(
+        button => {
+
+          button.disabled =
+            isCalling;
+
+        }
+      );
+
+
+  }
+
+
+}
+
+
+
+// =====================================
+// 啟動倒數計時器
+// =====================================
+
+
+function startCountdown() {
+
+
+  // 清除舊計時器
+
+
+  if (countdownTimer) {
+
+    clearInterval(
+      countdownTimer
+    );
+
+  }
+
+
+
+  updateLockUI();
+
+
+
+  countdownTimer =
+    setInterval(
+      () => {
+
+
+        updateLockUI();
+
+
+        // 倒數結束
+
+
+        if (!isSystemLocked()) {
+
+
+          clearInterval(
+            countdownTimer
+          );
+
+
+          countdownTimer = null;
+
+
+          loadQueueSettings();
+
+
+          loadTickets();
+
+
+        }
+
+
+      },
+      250
+    );
+
+
+}
+
+
+
+// =====================================
+// 讀取 queue_settings
+// =====================================
+
+
+async function loadQueueSettings() {
 
 
   const {
@@ -589,12 +813,21 @@ async function getQueueSettings() {
 
     .select("*")
 
+    .order(
+      "updated_at",
+      {
+        ascending: false
+      }
+    )
+
     .limit(1)
 
     .maybeSingle();
 
 
+
   if (error) {
+
 
     console.error(
       "讀取 queue_settings 失敗：",
@@ -602,115 +835,94 @@ async function getQueueSettings() {
     );
 
 
-    return null;
+    return;
 
   }
 
 
-  return data;
 
-}
-
-
-
-/* =================================
-   讀取目前叫號
-================================= */
+  queueSettings =
+    data;
 
 
-async function loadCurrentNumber() {
 
-
-  const data =
-
-    await getQueueSettings();
+  // 更新目前叫號
 
 
   const currentNumberElement =
-
     document.getElementById(
       "currentNumber"
     );
 
 
   if (
-
-    data &&
-    data.current_number
-
+    queueSettings &&
+    queueSettings.current_number
   ) {
 
-    currentNumberElement.textContent =
 
-      data.current_number;
+    currentNumberElement.textContent =
+      queueSettings.current_number;
+
 
   }
 
+
   else {
 
-    currentNumberElement.textContent =
 
+    currentNumberElement.textContent =
       "尚未叫號";
 
-  }
-
-
-
-  /* 更新鎖定狀態 */
-
-  if (
-
-    data &&
-    data.call_lock_until
-
-  ) {
-
-    lockUntil =
-
-      new Date(
-        data.call_lock_until
-      );
-
-  }
-
-  else {
-
-    lockUntil = null;
 
   }
 
 
-  updateLockStatus();
+
+  updateLockUI();
+
+
+
+  // 如果目前正在鎖定
+
+
+  if (isSystemLocked()) {
+
+    startCountdown();
+
+  }
+
 
 }
 
 
 
-/* =================================
-   讀取等待中的號碼
-================================= */
+// =====================================
+// 讀取等待中的號碼
+// =====================================
 
 
 async function loadTickets() {
 
 
   const ticketList =
-
     document.getElementById(
       "ticketList"
     );
 
 
   const statusMessage =
-
     document.getElementById(
       "statusMessage"
     );
 
 
-  statusMessage.textContent =
+  ticketList.innerHTML = "";
 
+
+  statusMessage.textContent =
     "載入中...";
+
 
 
   const {
@@ -726,24 +938,22 @@ async function loadTickets() {
     .select("*")
 
     .eq(
-
       "status",
-
       "waiting"
-
     )
 
     .order(
-
       "ticket_number",
-
       {
-
         ascending: true
-
       }
-
     );
+
+
+
+  // =====================================
+  // 發生錯誤
+  // =====================================
 
 
   if (error) {
@@ -768,7 +978,6 @@ async function loadTickets() {
 
 
     statusMessage.textContent =
-
       "";
 
 
@@ -778,48 +987,22 @@ async function loadTickets() {
 
 
 
-  ticketsCache = data;
-
-
-  renderTickets();
-
+  // =====================================
+  // 顯示等待人數
+  // =====================================
 
 
   statusMessage.textContent =
-
     `目前共有 ${data.length} 位等待中`;
 
 
 
-}
+  // =====================================
+  // 沒有等待號碼
+  // =====================================
 
 
-
-/* =================================
-   顯示號碼按鈕
-================================= */
-
-
-function renderTickets() {
-
-
-  const ticketList =
-
-    document.getElementById(
-      "ticketList"
-    );
-
-
-  ticketList.innerHTML =
-
-    "";
-
-
-  if (
-
-    ticketsCache.length === 0
-
-  ) {
+  if (data.length === 0) {
 
 
     ticketList.innerHTML = `
@@ -839,42 +1022,29 @@ function renderTickets() {
 
 
 
-  const isLocked =
+  // =====================================
+  // 建立號碼按鈕
+  // =====================================
 
-    isSystemLocked();
 
-
-
-  ticketsCache.forEach(
-
+  data.forEach(
     ticket => {
 
 
       const button =
-
         document.createElement(
           "button"
         );
 
 
       button.className =
-
         "ticket";
 
 
-      if (isLocked) {
-
-        button.classList.add(
-          "locked"
-        );
-
-      }
-
-
       button.disabled =
+        isSystemLocked() ||
+        isCalling;
 
-        isLocked ||
-        callingInProgress;
 
 
       button.innerHTML = `
@@ -883,28 +1053,28 @@ function renderTickets() {
 
         <small>
 
-          ${
-
-            isLocked
-
-              ? "系統暫時鎖定中 ⏳"
-
-              : "點擊叫號 🔊"
-
-          }
+          點擊叫號 🔊
 
         </small>
 
       `;
 
 
+
       button.addEventListener(
 
         "click",
 
-        () => callTicket(ticket)
+        () => {
+
+          callTicket(
+            ticket
+          );
+
+        }
 
       );
+
 
 
       ticketList.appendChild(
@@ -913,7 +1083,6 @@ function renderTickets() {
 
 
     }
-
   );
 
 
@@ -921,192 +1090,26 @@ function renderTickets() {
 
 
 
-/* =================================
-   判斷系統是否鎖定
-================================= */
-
-
-function isSystemLocked() {
-
-
-  if (!lockUntil) {
-
-    return false;
-
-  }
-
-
-  const now =
-
-    new Date();
-
-
-  return lockUntil > now;
-
-}
-
-
-
-/* =================================
-   更新鎖定倒數
-================================= */
-
-
-function updateLockStatus() {
-
-
-  const lockStatus =
-
-    document.getElementById(
-      "lockStatus"
-    );
-
-
-  const now =
-
-    new Date();
-
-
-  if (
-
-    lockUntil &&
-    lockUntil > now
-
-  ) {
-
-
-    const milliseconds =
-
-      lockUntil - now;
-
-
-    const seconds =
-
-      Math.ceil(
-        milliseconds / 1000
-      );
-
-
-    lockStatus.className =
-
-      "lock-status locked";
-
-
-    lockStatus.textContent =
-
-      `🔒 系統叫號鎖定中，${seconds} 秒後可再次叫號`;
-
-
-    renderTickets();
-
-
-  }
-
-  else {
-
-
-    lockUntil = null;
-
-
-    lockStatus.className =
-
-      "lock-status ready";
-
-
-    lockStatus.textContent =
-
-      "● 系統可以叫號";
-
-
-    renderTickets();
-
-
-  }
-
-}
-
-
-
-/* =================================
-   啟動倒數計時器
-================================= */
-
-
-function startCountdown() {
-
-
-  if (countdownTimer) {
-
-    clearInterval(
-      countdownTimer
-    );
-
-  }
-
-
-  updateLockStatus();
-
-
-  countdownTimer =
-
-    setInterval(
-
-      () => {
-
-
-        updateLockStatus();
-
-
-        if (
-
-          !isSystemLocked()
-
-        ) {
-
-
-          clearInterval(
-            countdownTimer
-          );
-
-
-          countdownTimer = null;
-
-        }
-
-
-      },
-
-      200
-
-    );
-
-}
-
-
-
-/* =================================
-   叫號
-================================= */
+// =====================================
+// 執行叫號
+// =====================================
 
 
 async function callTicket(ticket) {
 
 
-  /* 本機防止重複點擊 */
+  // =====================================
+  // 前端再次檢查
+  // =====================================
 
-  if (callingInProgress) {
-
-    return;
-
-  }
-
-
-
-  /* 先檢查目前鎖定 */
 
   if (isSystemLocked()) {
 
-    updateLockStatus();
+
+    alert(
+      "系統目前正在叫號中，請稍後再試"
+    );
+
 
     return;
 
@@ -1114,12 +1117,23 @@ async function callTicket(ticket) {
 
 
 
+  if (isCalling) {
+
+
+    return;
+
+  }
+
+
+
+  // =====================================
+  // 確認叫號
+  // =====================================
+
+
   const confirmed =
-
     confirm(
-
       `確定要叫號 ${ticket.display_number} 嗎？`
-
     );
 
 
@@ -1131,160 +1145,72 @@ async function callTicket(ticket) {
 
 
 
-  callingInProgress = true;
+  // =====================================
+  // 設定本機正在處理
+  // =====================================
 
 
-  renderTickets();
+  isCalling = true;
 
 
-
-  const statusMessage =
-
-    document.getElementById(
+  document
+    .getElementById(
       "statusMessage"
-    );
-
-
-  statusMessage.textContent =
-
-    `正在叫號 ${ticket.display_number}...`;
+    )
+    .textContent =
+      `正在叫號 ${ticket.display_number}...`;
 
 
 
-  try {
+  updateLockUI();
 
 
-    const {
+  document
+    .querySelectorAll(
+      ".ticket"
+    )
+    .forEach(
+      button => {
 
-      data,
-
-      error
-
-    } = await supabaseClient.rpc(
-
-      "call_ticket",
-
-      {
-
-        target_ticket_id:
-
-          ticket.id
+        button.disabled = true;
 
       }
-
     );
 
 
 
-    if (error) {
-
-      throw error;
-
-    }
+  // =====================================
+  // 呼叫 Supabase Function
+  // =====================================
 
 
+  const {
 
-    /*
-      RPC 有正常回傳，
-      但資料庫拒絕叫號
-    */
+    data,
 
-    if (
+    error
 
-      !data ||
-      data.success === false
+  } = await supabaseClient.rpc(
 
-    ) {
+    "call_ticket",
 
+    {
 
-      if (
-
-        data &&
-        data.lock_until
-
-      ) {
-
-
-        lockUntil =
-
-          new Date(
-            data.lock_until
-          );
-
-
-        startCountdown();
-
-      }
-
-
-      alert(
-
-        data?.message ||
-
-        "叫號失敗"
-
-      );
-
-
-      return;
+      p_ticket_id:
+        ticket.id
 
     }
 
-
-
-    /* =============================
-       叫號成功
-    ============================= */
-
-
-    document
-      .getElementById(
-        "currentNumber"
-      )
-      .textContent =
-
-      data.display_number ||
-      ticket.display_number;
+  );
 
 
 
-    /* 設定鎖定時間 */
-
-    if (
-
-      data.lock_until
-
-    ) {
+  // =====================================
+  // 叫號失敗
+  // =====================================
 
 
-      lockUntil =
-
-        new Date(
-          data.lock_until
-        );
-
-
-      startCountdown();
-
-    }
-
-
-
-    statusMessage.textContent =
-
-      `🔊 已叫號 ${ticket.display_number}`;
-
-
-
-    /* 重新讀取號碼 */
-
-    await loadTickets();
-
-
-  }
-
-
-  catch (error) {
+  if (error) {
 
 
     console.error(
@@ -1293,68 +1219,112 @@ async function callTicket(ticket) {
     );
 
 
+    isCalling = false;
+
+
     alert(
-
       "叫號失敗：\n" +
-
       error.message
-
     );
 
 
-  }
+    await loadQueueSettings();
+
+    await loadTickets();
 
 
-  finally {
-
-
-    callingInProgress =
-
-      false;
-
-
-    renderTickets();
+    return;
 
   }
 
 
-}
+
+  // =====================================
+  // 叫號成功
+  // =====================================
+
+
+  isCalling = false;
 
 
 
-/* =================================
-   手動重新整理
-================================= */
+  console.log(
+    "叫號成功：",
+    data
+  );
 
 
-async function manualRefresh() {
+
+  // 更新目前號碼
 
 
-  await loadCurrentNumber();
+  document
+    .getElementById(
+      "currentNumber"
+    )
+    .textContent =
+      ticket.display_number;
+
+
+
+  // 重新讀取設定
+
+
+  await loadQueueSettings();
+
+
+
+  // 重新讀取等待列表
 
 
   await loadTickets();
 
 
+
+  // 啟動倒數
+
+
+  startCountdown();
+
+
 }
 
 
 
-/* =================================
-   清空所有號碼
-================================= */
+// =====================================
+// 清空所有號碼
+// =====================================
 
 
 async function clearAllTickets() {
 
 
-  const confirmed =
+  // 如果正在鎖定
 
+
+  if (isSystemLocked()) {
+
+
+    alert(
+      "系統正在叫號中，暫時無法清空"
+    );
+
+
+    return;
+
+  }
+
+
+
+  const confirmed =
     confirm(
 
-      "⚠️ 確定要清空目前所有號碼嗎？\n\n清空後下一個號碼將重新從 A001 開始。"
+      "⚠️ 確定要清空目前所有號碼嗎？\n\n" +
+
+      "清空後下一個號碼將重新從 A001 開始。"
 
     );
+
 
 
   if (!confirmed) {
@@ -1362,6 +1332,16 @@ async function clearAllTickets() {
     return;
 
   }
+
+
+
+  // 防止重複操作
+
+
+  isCalling = true;
+
+
+  updateLockUI();
 
 
 
@@ -1376,19 +1356,28 @@ async function clearAllTickets() {
   );
 
 
+
+  // =====================================
+  // 清空失敗
+  // =====================================
+
+
   if (error) {
 
 
     console.error(error);
 
 
+    isCalling = false;
+
+
     alert(
-
       "清空失敗：\n" +
-
       error.message
-
     );
+
+
+    updateLockUI();
 
 
     return;
@@ -1397,47 +1386,63 @@ async function clearAllTickets() {
 
 
 
+  // =====================================
+  // 清空成功
+  // =====================================
+
+
+  isCalling = false;
+
+
+
   document
     .getElementById(
       "currentNumber"
     )
     .textContent =
+      "尚未叫號";
 
-    "尚未叫號";
-
-
-  lockUntil = null;
-
-
-  updateLockStatus();
-
-
-
-  await loadTickets();
 
 
   alert(
-
     "✅ 所有號碼已成功清空"
-
   );
+
+
+
+  await refreshAll();
 
 
 }
 
 
 
-/* =================================
-   Tickets 即時同步
-================================= */
+// =====================================
+// 手動重新整理
+// =====================================
+
+
+async function refreshAll() {
+
+
+  await loadQueueSettings();
+
+  await loadTickets();
+
+
+}
+
+
+
+// =====================================
+// Tickets 即時同步
+// =====================================
 
 
 supabaseClient
 
   .channel(
-
-    "tickets-channel"
-
+    "tickets-realtime-channel"
   )
 
   .on(
@@ -1454,10 +1459,15 @@ supabaseClient
 
     },
 
-    () => {
+    async () => {
 
 
-      loadTickets();
+      console.log(
+        "Tickets 資料已更新"
+      );
+
+
+      await loadTickets();
 
 
     }
@@ -1468,17 +1478,15 @@ supabaseClient
 
 
 
-/* =================================
-   queue_settings 即時同步
-================================= */
+// =====================================
+// Queue Settings 即時同步
+// =====================================
 
 
 supabaseClient
 
   .channel(
-
-    "queue-settings-channel"
-
+    "queue-settings-realtime-channel"
   )
 
   .on(
@@ -1495,10 +1503,19 @@ supabaseClient
 
     },
 
-    () => {
+    async payload => {
 
 
-      loadCurrentNumber();
+      console.log(
+        "Queue Settings 已更新：",
+        payload
+      );
+
+
+      await loadQueueSettings();
+
+
+      await loadTickets();
 
 
     }
@@ -1509,45 +1526,23 @@ supabaseClient
 
 
 
-/* =================================
-   定期同步鎖定狀態
-================================= */
+// =====================================
+// 網頁啟動
+// =====================================
 
 
-setInterval(
-
-  async () => {
+async function initialize() {
 
 
-    if (
+  await loadQueueSettings();
 
-      !isSystemLocked()
-
-    ) {
+  await loadTickets();
 
 
-      await loadCurrentNumber();
-
-    }
+}
 
 
-  },
-
-  1000
-
-);
-
-
-
-/* =================================
-   網頁啟動
-================================= */
-
-
-loadCurrentNumber();
-
-
-loadTickets();
+initialize();
 
 
 </script>
