@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
+
   <meta charset="UTF-8">
 
   <meta
@@ -10,8 +12,10 @@
 
   <title>叫號管理台</title>
 
+
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 
   <style>
 
@@ -19,8 +23,10 @@
       box-sizing: border-box;
     }
 
+
     body {
       margin: 0;
+
       font-family:
         "Microsoft JhengHei",
         "Noto Sans TC",
@@ -28,6 +34,7 @@
         sans-serif;
 
       background: #f3f6fb;
+
       color: #1f2937;
     }
 
@@ -37,10 +44,15 @@
     ========================= */
 
     .container {
+
       width: 100%;
+
       max-width: 1100px;
+
       margin: auto;
+
       padding: 40px 30px;
+
     }
 
 
@@ -49,18 +61,29 @@
     ========================= */
 
     .page-title {
+
       text-align: center;
+
       margin-bottom: 30px;
+
     }
+
 
     .page-title h1 {
+
       margin: 0;
+
       font-size: 36px;
+
     }
 
+
     .page-title p {
+
       margin-top: 10px;
+
       color: #6b7280;
+
     }
 
 
@@ -69,6 +92,7 @@
     ========================= */
 
     .current-card {
+
       background: white;
 
       border-radius: 20px;
@@ -81,18 +105,25 @@
         0 10px 30px rgba(0,0,0,0.08);
 
       margin-bottom: 25px;
+
     }
 
 
     .current-label {
+
       font-size: 18px;
+
       color: #6b7280;
+
       margin-bottom: 10px;
+
     }
 
 
     .current-number {
+
       font-size: 64px;
+
       font-weight: bold;
 
       color: #111827;
@@ -102,7 +133,9 @@
       display: flex;
 
       align-items: center;
+
       justify-content: center;
+
     }
 
 
@@ -119,21 +152,28 @@
       margin-bottom: 25px;
 
       font-weight: bold;
+
     }
 
 
     .status-ready {
+
       color: #15803d;
+
     }
 
 
     .status-calling {
+
       color: #d97706;
+
     }
 
 
     .status-error {
+
       color: #dc2626;
+
     }
 
 
@@ -152,6 +192,7 @@
       margin-bottom: 20px;
 
       flex-wrap: wrap;
+
     }
 
 
@@ -170,12 +211,14 @@
       cursor: pointer;
 
       transition: 0.2s;
+
     }
 
 
     button:hover {
 
       transform: translateY(-2px);
+
     }
 
 
@@ -186,6 +229,7 @@
       cursor: not-allowed;
 
       transform: none;
+
     }
 
 
@@ -194,6 +238,7 @@
       background: #2563eb;
 
       color: white;
+
     }
 
 
@@ -202,11 +247,12 @@
       background: #dc2626;
 
       color: white;
+
     }
 
 
     /* =========================
-       叫號提示
+       叫號訊息
     ========================= */
 
     .calling-message {
@@ -220,6 +266,7 @@
       min-height: 30px;
 
       margin-bottom: 30px;
+
     }
 
 
@@ -234,6 +281,7 @@
       font-weight: bold;
 
       margin-bottom: 20px;
+
     }
 
 
@@ -245,6 +293,7 @@
         repeat(auto-fill, minmax(160px, 1fr));
 
       gap: 15px;
+
     }
 
 
@@ -270,6 +319,7 @@
       transition: 0.2s;
 
       user-select: none;
+
     }
 
 
@@ -279,6 +329,7 @@
 
       box-shadow:
         0 12px 30px rgba(0,0,0,0.15);
+
     }
 
 
@@ -291,6 +342,7 @@
       color: #111827;
 
       margin-bottom: 10px;
+
     }
 
 
@@ -299,6 +351,7 @@
       color: #6b7280;
 
       font-size: 14px;
+
     }
 
 
@@ -317,6 +370,7 @@
       border-radius: 15px;
 
       color: #6b7280;
+
     }
 
 
@@ -327,17 +381,23 @@
     @media (max-width: 600px) {
 
       .container {
+
         padding: 25px 15px;
+
       }
 
 
       .page-title h1 {
+
         font-size: 28px;
+
       }
 
 
       .current-number {
+
         font-size: 48px;
+
       }
 
     }
@@ -353,9 +413,7 @@
   <div class="container">
 
 
-    <!-- =========================
-         標題
-    ========================== -->
+    <!-- 標題 -->
 
     <div class="page-title">
 
@@ -368,10 +426,7 @@
     </div>
 
 
-
-    <!-- =========================
-         目前叫號
-    ========================== -->
+    <!-- 目前叫號 -->
 
     <div class="current-card">
 
@@ -394,10 +449,7 @@
     </div>
 
 
-
-    <!-- =========================
-         系統狀態
-    ========================== -->
+    <!-- 系統狀態 -->
 
     <div
       id="systemStatus"
@@ -409,10 +461,7 @@
     </div>
 
 
-
-    <!-- =========================
-         控制按鈕
-    ========================== -->
+    <!-- 控制按鈕 -->
 
     <div class="controls">
 
@@ -425,7 +474,6 @@
         🔄 重新整理
 
       </button>
-
 
 
       <button
@@ -441,10 +489,7 @@
     </div>
 
 
-
-    <!-- =========================
-         叫號訊息
-    ========================== -->
+    <!-- 叫號訊息 -->
 
     <div
       id="callingMessage"
@@ -452,10 +497,7 @@
     ></div>
 
 
-
-    <!-- =========================
-         等待號碼
-    ========================== -->
+    <!-- 等待號碼 -->
 
     <div
       id="queueTitle"
@@ -467,17 +509,13 @@
     </div>
 
 
-
     <div
       id="queueList"
       class="queue-list"
-    >
-
-    </div>
+    ></div>
 
 
   </div>
-
 
 
   <script>
@@ -485,16 +523,15 @@
 
     /* =====================================
        Supabase 設定
-
-       ⚠️ 請修改這兩個地方
     ====================================== */
 
 
-    const SUPABASE_URL = 'https://ubrjcadpfdfymbjwubfg.supabase.co';
+    const SUPABASE_URL =
+      'https://ubrjcadpfdfymbjwubfg.supabase.co';
 
 
-    const SUPABASE_ANON_KEY = 'sb_publishable_0J9AWhVkRRYDehVffrmNdQ_jlOOqVAw';
-
+    const SUPABASE_ANON_KEY =
+      'sb_publishable_0J9AWhVkRRYDehVffrmNdQ_jlOOqVAw';
 
 
     /* =====================================
@@ -503,11 +540,10 @@
 
 
     const supabaseClient =
-      supabase.createClient(
+      window.supabase.createClient(
         SUPABASE_URL,
         SUPABASE_ANON_KEY
       );
-
 
 
     /* =====================================
@@ -517,13 +553,11 @@
 
     let currentEventId = null;
 
-
     let isCalling = false;
 
 
-
     /* =====================================
-       網頁載入完成
+       網頁載入
     ====================================== */
 
 
@@ -531,10 +565,23 @@
       'DOMContentLoaded',
       async () => {
 
+        console.log('管理台啟動');
+
         await loadQueue();
 
+
+        /* 每 5 秒重新載入 */
+
         setInterval(
-          loadQueue,
+          () => {
+
+            if (!isCalling) {
+
+              loadQueue();
+
+            }
+
+          },
           5000
         );
 
@@ -542,9 +589,8 @@
     );
 
 
-
     /* =====================================
-       載入目前 Queue
+       載入 Queue
     ====================================== */
 
 
@@ -552,16 +598,19 @@
 
 
       if (isCalling) {
+
         return;
+
       }
 
 
       try {
 
 
-        /* =========================
-           取得等待中的號碼
-        ========================== */
+        setSystemStatus(
+          '● 正在載入資料...',
+          'calling'
+        );
 
 
         const {
@@ -594,15 +643,20 @@
 
         if (ticketError) {
 
+          console.error(ticketError);
+
           throw ticketError;
 
         }
 
 
+        console.log(
+          '取得等待號碼：',
+          tickets
+        );
 
-        /* =========================
-           找到目前 Event ID
-        ========================== */
+
+        /* 找目前 Event ID */
 
 
         if (
@@ -616,10 +670,7 @@
         }
 
 
-
-        /* =========================
-           顯示等待號碼
-        ========================== */
+        /* 顯示等待號碼 */
 
 
         renderQueue(
@@ -627,10 +678,7 @@
         );
 
 
-
-        /* =========================
-           載入目前叫號
-        ========================== */
+        /* 載入目前叫號 */
 
 
         if (currentEventId) {
@@ -640,6 +688,12 @@
           );
 
         }
+
+
+        setSystemStatus(
+          '● 系統可以叫號',
+          'ready'
+        );
 
 
       }
@@ -661,7 +715,6 @@
       }
 
     }
-
 
 
     /* =====================================
@@ -695,6 +748,7 @@
         tickets.length === 0
       ) {
 
+
         queueList.innerHTML = `
 
           <div class="empty">
@@ -711,7 +765,6 @@
       }
 
 
-
       tickets.forEach(
         ticket => {
 
@@ -722,7 +775,6 @@
 
           card.className =
             'ticket-card';
-
 
 
           card.innerHTML = `
@@ -743,7 +795,6 @@
           `;
 
 
-
           card.addEventListener(
             'click',
             () => {
@@ -757,16 +808,15 @@
           );
 
 
-
           queueList.appendChild(
             card
           );
+
 
         }
       );
 
     }
-
 
 
     /* =====================================
@@ -800,7 +850,6 @@
           .maybeSingle();
 
 
-
         if (error) {
 
           throw error;
@@ -808,12 +857,10 @@
         }
 
 
-
         const currentNumber =
           document.getElementById(
             'currentNumber'
           );
-
 
 
         if (
@@ -849,7 +896,6 @@
     }
 
 
-
     /* =====================================
        叫號
     ====================================== */
@@ -863,21 +909,21 @@
 
       if (isCalling) {
 
+
         alert(
           '系統正在叫號中，請稍後再試'
         );
+
 
         return;
 
       }
 
 
-
       const confirmCall =
         confirm(
           `確定要叫號 ${displayNumber} 嗎？`
         );
-
 
 
       if (!confirmCall) {
@@ -887,17 +933,10 @@
       }
 
 
-
       try {
 
 
-        /* =========================
-           設定叫號中
-        ========================== */
-
-
         isCalling = true;
-
 
 
         setSystemStatus(
@@ -906,20 +945,26 @@
         );
 
 
-
         document.getElementById(
           'callingMessage'
         ).innerText =
           `正在叫號 ${displayNumber}...`;
 
 
+        console.log(
+          '準備呼叫 call_ticket'
+        );
 
-        /* =========================
-           呼叫 Supabase Function
 
-           ⚠️ 重要：
-           這裡一定要是 p_ticket_id
-        ========================== */
+        console.log(
+          'Ticket ID：',
+          ticketId
+        );
+
+
+        /* =================================
+           呼叫 Supabase RPC
+        ================================= */
 
 
         const {
@@ -933,25 +978,29 @@
         );
 
 
+        console.log(
+          'RPC 回傳資料：',
+          data
+        );
+
 
         if (error) {
+
+
+          console.error(
+            'RPC Error：',
+            error
+          );
+
 
           throw error;
 
         }
 
 
-
-        console.log(
-          '叫號成功：',
-          data
-        );
-
-
-
-        /* =========================
-           更新目前叫號
-        ========================== */
+        /* =================================
+           更新目前叫號畫面
+        ================================= */
 
 
         document.getElementById(
@@ -960,10 +1009,9 @@
           displayNumber;
 
 
-
-        /* =========================
-           播放語音
-        ========================== */
+        /* =================================
+           播放管理台語音
+        ================================= */
 
 
         speakNumber(
@@ -971,10 +1019,18 @@
         );
 
 
+        /* =================================
+           顯示成功訊息
+        ================================= */
 
-        /* =========================
-           等待 3 秒
-        ========================== */
+
+        document.getElementById(
+          'callingMessage'
+        ).innerText =
+          `已叫號 ${displayNumber}`;
+
+
+        /* 等待語音播放 */
 
 
         await new Promise(
@@ -989,15 +1045,9 @@
         );
 
 
-
         document.getElementById(
           'callingMessage'
         ).innerText = '';
-
-
-
-        isCalling = false;
-
 
 
         setSystemStatus(
@@ -1006,10 +1056,10 @@
         );
 
 
+        isCalling = false;
 
-        /* =========================
-           重新載入 Queue
-        ========================== */
+
+        /* 重新載入 Queue */
 
 
         await loadQueue();
@@ -1026,9 +1076,7 @@
         );
 
 
-
         isCalling = false;
-
 
 
         setSystemStatus(
@@ -1037,16 +1085,26 @@
         );
 
 
-
         document.getElementById(
           'callingMessage'
         ).innerText = '';
 
 
+        let errorMessage =
+          '叫號失敗';
+
+
+        if (error.message) {
+
+          errorMessage =
+            error.message;
+
+        }
+
 
         alert(
-          error.message ||
-          '叫號失敗'
+          '叫號失敗：\n' +
+          errorMessage
         );
 
 
@@ -1067,7 +1125,6 @@
     }
 
 
-
     /* =====================================
        語音叫號
     ====================================== */
@@ -1080,22 +1137,31 @@
         !('speechSynthesis' in window)
       ) {
 
+
         console.warn(
           '此瀏覽器不支援語音功能'
         );
+
 
         return;
 
       }
 
 
+      /* 停止之前的語音 */
+
 
       window.speechSynthesis.cancel();
 
 
-
       const text =
         `請 ${displayNumber} 號到櫃台辦理`;
+
+
+      console.log(
+        '播放語音：',
+        text
+      );
 
 
       const speech =
@@ -1104,20 +1170,20 @@
         );
 
 
-
       speech.lang =
         'zh-TW';
-
 
 
       speech.rate =
         0.8;
 
 
-
       speech.pitch =
         1;
 
+
+      speech.volume =
+        1;
 
 
       window.speechSynthesis.speak(
@@ -1127,9 +1193,8 @@
     }
 
 
-
     /* =====================================
-       清空所有號碼
+       清空所有等待號碼
     ====================================== */
 
 
@@ -1149,7 +1214,6 @@
       }
 
 
-
       try {
 
 
@@ -1167,7 +1231,6 @@
           );
 
 
-
         if (error) {
 
           throw error;
@@ -1175,11 +1238,18 @@
         }
 
 
-
         alert(
           '等待中的號碼已清空'
         );
 
+
+        currentEventId = null;
+
+
+        document.getElementById(
+          'currentNumber'
+        ).innerText =
+          '尚未叫號';
 
 
         await loadQueue();
@@ -1204,7 +1274,6 @@
       }
 
     }
-
 
 
     /* =====================================
@@ -1243,7 +1312,7 @@
       }
 
 
-      if (
+      else if (
         type === 'calling'
       ) {
 
@@ -1254,7 +1323,7 @@
       }
 
 
-      if (
+      else if (
         type === 'error'
       ) {
 
@@ -1271,4 +1340,5 @@
 
 
 </body>
+
 </html>
