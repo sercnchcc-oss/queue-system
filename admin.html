@@ -14,6 +14,7 @@
 
 
   <!-- Supabase -->
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 
@@ -491,10 +492,10 @@
 
       <button
         class="clear-btn"
-        onclick="clearAllTickets()"
+        onclick="resetQueue()"
       >
 
-        🗑 清空所有號碼
+        🗑 清空並重置叫號系統
 
       </button>
 
@@ -568,6 +569,8 @@
 
     let isCalling = false;
 
+    let isLoading = false;
+
 
     /* =====================================
        網頁載入
@@ -580,18 +583,22 @@
 
         console.log('管理台啟動');
 
+
         await loadQueue();
 
 
-        /* 每 5 秒更新一次 */
+        /* 每 5 秒自動更新 */
 
 
         setInterval(
-          async () => {
+          () => {
 
-            if (!isCalling) {
+            if (
+              !isCalling &&
+              !isLoading
+            ) {
 
-              await loadQueue();
+              loadQueue();
 
             }
 
@@ -611,14 +618,28 @@
     async function loadQueue() {
 
 
-      if (isCalling) {
+      if (isLoading) {
 
         return;
 
       }
 
 
+      isLoading = true;
+
+
       try {
+
+
+        setSystemStatus(
+          '● 正在載入資料...',
+          'calling'
+        );
+
+
+        /* =============================
+           取得等待中的號碼
+        ============================== */
 
 
         const {
@@ -662,7 +683,10 @@
         );
 
 
-        /* 找 Event ID */
+        /* =============================
+           如果有等待號碼
+           更新 Event ID
+        ============================== */
 
 
         if (
@@ -676,6 +700,46 @@
         }
 
 
+        /* =============================
+           如果目前沒有 Event ID
+           從 queue_settings 找
+        ============================== */
+
+
+        if (!currentEventId) {
+
+
+          const {
+            data: settings,
+            error: settingsError
+          } = await supabaseClient
+
+            .from('queue_settings')
+
+            .select(`
+              event_id,
+              current_number
+            `)
+
+            .limit(1)
+
+
+            .maybeSingle();
+
+
+          if (
+            !settingsError &&
+            settings
+          ) {
+
+            currentEventId =
+              settings.event_id;
+
+          }
+
+        }
+
+
         /* 顯示等待號碼 */
 
 
@@ -684,7 +748,9 @@
         );
 
 
-        /* 載入目前叫號 */
+        /* =============================
+           載入目前叫號
+        ============================== */
 
 
         if (currentEventId) {
@@ -695,12 +761,20 @@
 
         }
 
+        else {
+
+          document.getElementById(
+            'currentNumber'
+          ).innerText =
+            '尚未叫號';
+
+        }
+
 
         setSystemStatus(
           '● 系統可以叫號',
           'ready'
         );
-
 
       }
 
@@ -717,6 +791,13 @@
           '● 載入資料失敗',
           'error'
         );
+
+      }
+
+      finally {
+
+
+        isLoading = false;
 
       }
 
@@ -750,6 +831,9 @@
       queueList.innerHTML = '';
 
 
+      /* 沒有等待號碼 */
+
+
       if (
         tickets.length === 0
       ) {
@@ -769,6 +853,9 @@
         return;
 
       }
+
+
+      /* 建立號碼卡片 */
 
 
       tickets.forEach(
@@ -893,7 +980,6 @@
 
         }
 
-
       }
 
       catch (error) {
@@ -944,13 +1030,10 @@
       try {
 
 
-        /* 鎖定叫號 */
+        /* 鎖定系統 */
 
 
         isCalling = true;
-
-
-        /* 防止重複點擊 */
 
 
         if (card) {
@@ -975,19 +1058,14 @@
 
 
         console.log(
-          '準備呼叫 call_ticket'
-        );
-
-
-        console.log(
-          'Ticket ID：',
+          '呼叫 call_ticket：',
           ticketId
         );
 
 
-        /* =================================
+        /* =============================
            呼叫 Supabase RPC
-        ================================= */
+        ============================== */
 
 
         const {
@@ -1009,20 +1087,14 @@
 
         if (error) {
 
-          console.error(
-            'RPC Error：',
-            error
-          );
-
-
           throw error;
 
         }
 
 
-        /* =================================
-           RPC 成功後才更新畫面
-        ================================= */
+        /* =============================
+           RPC 成功
+        ============================== */
 
 
         document.getElementById(
@@ -1031,9 +1103,13 @@
           displayNumber;
 
 
-        /* =================================
-           管理台播放語音
-        ================================= */
+        document.getElementById(
+          'callingMessage'
+        ).innerText =
+          `已成功叫號 ${displayNumber}`;
+
+
+        /* 管理台播放語音 */
 
 
         speakNumber(
@@ -1041,19 +1117,21 @@
         );
 
 
-        document.getElementById(
-          'callingMessage'
-        ).innerText =
-          `已成功叫號 ${displayNumber}`;
+        /*
+          注意：
+
+          這裡先解除 isCalling，
+          再重新讀取 Queue。
+
+          原本你的版本在 isCalling = true 時
+          呼叫 loadQueue()，
+
+          loadQueue 可能直接停止，
+          造成重新整理沒有反應。
+        */
 
 
-        /* =================================
-           重新讀取資料
-
-           這一步很重要，
-           可以避免畫面還留著
-           已經叫過的號碼
-        ================================= */
+        isCalling = false;
 
 
         await new Promise(
@@ -1061,7 +1139,7 @@
 
             setTimeout(
               resolve,
-              1000
+              500
             );
 
           }
@@ -1080,7 +1158,6 @@
           '● 系統可以叫號',
           'ready'
         );
-
 
       }
 
@@ -1108,16 +1185,13 @@
         }
 
 
-        /* PostgreSQL 自訂錯誤 */
-
-
         if (
           error &&
           error.code === 'P0001'
         ) {
 
           errorMessage =
-            '此號碼已經被叫過，或號碼不存在。系統將重新整理號碼列表。';
+            '此號碼已經被叫過，或號碼不存在。';
 
         }
 
@@ -1132,7 +1206,10 @@
         );
 
 
-        /* 發生錯誤也重新讀取資料 */
+        /* 發生錯誤也重新載入 */
+
+
+        isCalling = false;
 
 
         await loadQueue();
@@ -1176,13 +1253,18 @@
         !('speechSynthesis' in window)
       ) {
 
+
         console.warn(
           '此瀏覽器不支援語音功能'
         );
 
+
         return;
 
       }
+
+
+      /* 停止之前語音 */
 
 
       window.speechSynthesis.cancel();
@@ -1228,20 +1310,20 @@
 
 
     /* =====================================
-       清空所有等待號碼
+       清空並重置叫號系統
     ====================================== */
 
 
-    async function clearAllTickets() {
+    async function resetQueue() {
 
 
-      const confirmClear =
+      const confirmReset =
         confirm(
-          '確定要清空所有等待中的號碼嗎？此操作無法復原。'
+          '確定要清空所有號碼並重置整個叫號系統嗎？所有裝置將可以重新領票。'
         );
 
 
-      if (!confirmClear) {
+      if (!confirmReset) {
 
         return;
 
@@ -1251,18 +1333,32 @@
       try {
 
 
+        setSystemStatus(
+          '● 正在重置系統...',
+          'calling'
+        );
+
+
+        /*
+          呼叫 reset_queue RPC
+
+          這個 Function 必須在 Supabase
+          SQL Editor 建立。
+        */
+
+
         const {
+          data,
           error
-        } = await supabaseClient
+        } = await supabaseClient.rpc(
+          'reset_queue'
+        );
 
-          .from('tickets')
 
-          .delete()
-
-          .eq(
-            'status',
-            'waiting'
-          );
+        console.log(
+          'reset_queue 回傳：',
+          data
+        );
 
 
         if (error) {
@@ -1272,13 +1368,38 @@
         }
 
 
+        /* 清除目前 Event ID */
+
+
+        currentEventId = null;
+
+
+        /* 清除目前叫號畫面 */
+
+
+        document.getElementById(
+          'currentNumber'
+        ).innerText =
+          '尚未叫號';
+
+
+        document.getElementById(
+          'callingMessage'
+        ).innerText = '';
+
+
         alert(
-          '等待中的號碼已清空'
+          '叫號系統已重置，所有裝置現在可以重新領票。'
         );
 
 
         await loadQueue();
 
+
+        setSystemStatus(
+          '● 系統可以叫號',
+          'ready'
+        );
 
       }
 
@@ -1286,14 +1407,20 @@
 
 
         console.error(
-          '清空失敗：',
+          '重置系統失敗：',
           error
+        );
+
+
+        setSystemStatus(
+          '● 系統重置失敗',
+          'error'
         );
 
 
         alert(
           error.message ||
-          '清空失敗'
+          '系統重置失敗'
         );
 
       }
