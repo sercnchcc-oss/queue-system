@@ -25,6 +25,7 @@
 
 
     body {
+
       margin: 0;
 
       font-family:
@@ -36,6 +37,7 @@
       background: #f3f6fb;
 
       color: #1f2937;
+
     }
 
 
@@ -333,6 +335,17 @@
     }
 
 
+    .ticket-card.disabled {
+
+      opacity: 0.5;
+
+      pointer-events: none;
+
+      cursor: not-allowed;
+
+    }
+
+
     .ticket-number {
 
       font-size: 30px;
@@ -570,14 +583,15 @@
         await loadQueue();
 
 
-        /* 每 5 秒重新載入 */
+        /* 每 5 秒更新一次 */
+
 
         setInterval(
-          () => {
+          async () => {
 
             if (!isCalling) {
 
-              loadQueue();
+              await loadQueue();
 
             }
 
@@ -605,12 +619,6 @@
 
 
       try {
-
-
-        setSystemStatus(
-          '● 正在載入資料...',
-          'calling'
-        );
 
 
         const {
@@ -643,8 +651,6 @@
 
         if (ticketError) {
 
-          console.error(ticketError);
-
           throw ticketError;
 
         }
@@ -656,7 +662,7 @@
         );
 
 
-        /* 找目前 Event ID */
+        /* 找 Event ID */
 
 
         if (
@@ -799,9 +805,18 @@
             'click',
             () => {
 
+
+              if (isCalling) {
+
+                return;
+
+              }
+
+
               callTicket(
                 ticket.id,
-                ticket.display_number
+                ticket.display_number,
+                card
               );
 
             }
@@ -811,7 +826,6 @@
           queueList.appendChild(
             card
           );
-
 
         }
       );
@@ -838,8 +852,7 @@
           .from('queue_settings')
 
           .select(`
-            current_number,
-            call_lock_until
+            current_number
           `)
 
           .eq(
@@ -903,17 +916,12 @@
 
     async function callTicket(
       ticketId,
-      displayNumber
+      displayNumber,
+      card
     ) {
 
 
       if (isCalling) {
-
-
-        alert(
-          '系統正在叫號中，請稍後再試'
-        );
-
 
         return;
 
@@ -936,7 +944,22 @@
       try {
 
 
+        /* 鎖定叫號 */
+
+
         isCalling = true;
+
+
+        /* 防止重複點擊 */
+
+
+        if (card) {
+
+          card.classList.add(
+            'disabled'
+          );
+
+        }
 
 
         setSystemStatus(
@@ -979,13 +1002,12 @@
 
 
         console.log(
-          'RPC 回傳資料：',
+          'RPC 回傳：',
           data
         );
 
 
         if (error) {
-
 
           console.error(
             'RPC Error：',
@@ -999,7 +1021,7 @@
 
 
         /* =================================
-           更新目前叫號畫面
+           RPC 成功後才更新畫面
         ================================= */
 
 
@@ -1010,7 +1032,7 @@
 
 
         /* =================================
-           播放管理台語音
+           管理台播放語音
         ================================= */
 
 
@@ -1019,18 +1041,19 @@
         );
 
 
-        /* =================================
-           顯示成功訊息
-        ================================= */
-
-
         document.getElementById(
           'callingMessage'
         ).innerText =
-          `已叫號 ${displayNumber}`;
+          `已成功叫號 ${displayNumber}`;
 
 
-        /* 等待語音播放 */
+        /* =================================
+           重新讀取資料
+
+           這一步很重要，
+           可以避免畫面還留著
+           已經叫過的號碼
+        ================================= */
 
 
         await new Promise(
@@ -1038,11 +1061,14 @@
 
             setTimeout(
               resolve,
-              3000
+              1000
             );
 
           }
         );
+
+
+        await loadQueue();
 
 
         document.getElementById(
@@ -1056,15 +1082,6 @@
         );
 
 
-        isCalling = false;
-
-
-        /* 重新載入 Queue */
-
-
-        await loadQueue();
-
-
       }
 
       catch (error) {
@@ -1076,25 +1093,14 @@
         );
 
 
-        isCalling = false;
-
-
-        setSystemStatus(
-          '● 系統發生錯誤',
-          'error'
-        );
-
-
-        document.getElementById(
-          'callingMessage'
-        ).innerText = '';
-
-
         let errorMessage =
           '叫號失敗';
 
 
-        if (error.message) {
+        if (
+          error &&
+          error.message
+        ) {
 
           errorMessage =
             error.message;
@@ -1102,23 +1108,56 @@
         }
 
 
+        /* PostgreSQL 自訂錯誤 */
+
+
+        if (
+          error &&
+          error.code === 'P0001'
+        ) {
+
+          errorMessage =
+            '此號碼已經被叫過，或號碼不存在。系統將重新整理號碼列表。';
+
+        }
+
+
+        document.getElementById(
+          'callingMessage'
+        ).innerText = '';
+
+
         alert(
-          '叫號失敗：\n' +
           errorMessage
         );
 
 
-        setTimeout(
-          () => {
+        /* 發生錯誤也重新讀取資料 */
 
-            setSystemStatus(
-              '● 系統可以叫號',
-              'ready'
-            );
 
-          },
-          3000
+        await loadQueue();
+
+
+        setSystemStatus(
+          '● 系統可以叫號',
+          'ready'
         );
+
+      }
+
+      finally {
+
+
+        isCalling = false;
+
+
+        if (card) {
+
+          card.classList.remove(
+            'disabled'
+          );
+
+        }
 
       }
 
@@ -1137,18 +1176,13 @@
         !('speechSynthesis' in window)
       ) {
 
-
         console.warn(
           '此瀏覽器不支援語音功能'
         );
 
-
         return;
 
       }
-
-
-      /* 停止之前的語音 */
 
 
       window.speechSynthesis.cancel();
@@ -1243,15 +1277,6 @@
         );
 
 
-        currentEventId = null;
-
-
-        document.getElementById(
-          'currentNumber'
-        ).innerText =
-          '尚未叫號';
-
-
         await loadQueue();
 
 
@@ -1311,7 +1336,6 @@
 
       }
 
-
       else if (
         type === 'calling'
       ) {
@@ -1321,7 +1345,6 @@
         );
 
       }
-
 
       else if (
         type === 'error'
