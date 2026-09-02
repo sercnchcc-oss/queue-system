@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>現場叫號系統</title>
+
+
+  <!-- Supabase -->
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+
+    body {
+
+      margin: 0;
+
+      width: 100vw;
+      height: 100vh;
+
+      overflow: hidden;
+
+      font-family:
+
+        "Microsoft JhengHei",
+        "Noto Sans TC",
+        Arial,
+        sans-serif;
+
+
+      background:
+
+        linear-gradient(
+          135deg,
+          #111827,
+          #1f2937
+        );
+
+
+      color: white;
+
+    }
+
+
+    /* =========================
+       主畫面
+    ========================= */
+
+    .display-container {
+
+      height: 100vh;
+
+      display: flex;
+
+      flex-direction: column;
+
+      align-items: center;
+
+      justify-content: center;
+
+      text-align: center;
+
+      padding: 40px;
+
+    }
+
+
+    /* =========================
+       標題
+    ========================= */
+
+    .title {
+
+      font-size: clamp(
+        32px,
+        4vw,
+        70px
+      );
+
+      letter-spacing: 8px;
+
+      margin-bottom: 40px;
+
+      color: #d1d5db;
+
+    }
+
+
+    /* =========================
+       現在請
+    ========================= */
+
+    .please {
+
+      font-size: clamp(
+        40px,
+        5vw,
+        90px
+      );
+
+      margin-bottom: 20px;
+
+    }
+
+
+    /* =========================
+       號碼
+    ========================= */
+
+    .number {
+
+      font-size: clamp(
+        150px,
+        25vw,
+        500px
+      );
+
+      font-weight: bold;
+
+      letter-spacing: 15px;
+
+      line-height: 1;
+
+      text-shadow:
+
+        0 0 30px rgba(255,255,255,.2),
+
+        0 0 60px rgba(255,255,255,.1);
+
+    }
+
+
+    /* =========================
+       請入場
+    ========================= */
+
+    .enter {
+
+      margin-top: 40px;
+
+      font-size: clamp(
+        35px,
+        5vw,
+        80px
+      );
+
+      color: #d1d5db;
+
+    }
+
+
+    /* =========================
+       動畫
+    ========================= */
+
+    .announce {
+
+      animation:
+
+        announceAnimation
+
+        1.5s
+
+        ease-in-out;
+
+    }
+
+
+    @keyframes announceAnimation {
+
+      0% {
+
+        transform: scale(.7);
+
+        opacity: 0;
+
+      }
+
+
+      50% {
+
+        transform: scale(1.08);
+
+        opacity: 1;
+
+      }
+
+
+      100% {
+
+        transform: scale(1);
+
+        opacity: 1;
+
+      }
+
+    }
+
+
+    /* =========================
+       啟動音效畫面
+    ========================= */
+
+    #audioStartScreen {
+
+      position: fixed;
+
+      inset: 0;
+
+      z-index: 999;
+
+      display: flex;
+
+      flex-direction: column;
+
+      align-items: center;
+
+      justify-content: center;
+
+      gap: 30px;
+
+      background:
+
+        linear-gradient(
+          135deg,
+          #111827,
+          #1f2937
+        );
+
+    }
+
+
+    #audioStartScreen h1 {
+
+      font-size: 45px;
+
+      margin: 0;
+
+    }
+
+
+    #audioStartScreen p {
+
+      font-size: 22px;
+
+      color: #d1d5db;
+
+    }
+
+
+    #startAudioButton {
+
+      padding:
+
+        20px
+
+        50px;
+
+
+      border: none;
+
+      border-radius: 15px;
+
+      cursor: pointer;
+
+      font-size: 25px;
+
+      font-weight: bold;
+
+      background: white;
+
+      color: #111827;
+
+    }
+
+
+    #startAudioButton:hover {
+
+      transform: scale(1.05);
+
+    }
+
+
+    /* =========================
+       連線狀態
+    ========================= */
+
+    .connection-status {
+
+      position: fixed;
+
+      right: 20px;
+
+      bottom: 15px;
+
+      font-size: 14px;
+
+      color: #9ca3af;
+
+    }
+
+  </style>
+
+</head>
+
+
+
+<body>
+
+
+<!-- =========================
+     啟動廣播
+========================= -->
+
+<div id="audioStartScreen">
+
+  <h1>
+    🔊 叫號系統
+  </h1>
+
+  <p>
+    請點擊下方按鈕啟動廣播系統
+  </p>
+
+  <button id="startAudioButton">
+
+    啟動叫號系統
+
+  </button>
+
+</div>
+
+
+
+<!-- =========================
+     主要畫面
+========================= -->
+
+<div class="display-container">
+
+
+  <div class="title">
+
+    🎫 現場叫號系統
+
+  </div>
+
+
+  <div class="please">
+
+    現在請
+
+  </div>
+
+
+  <div
+    id="currentNumber"
+    class="number"
+  >
+
+    等待叫號
+
+  </div>
+
+
+  <div class="enter">
+
+    請入場
+
+  </div>
+
+
+</div>
+
+
+
+<div
+  id="connectionStatus"
+  class="connection-status"
+>
+
+  ● 正在連線
+
+</div>
+
+
+
+<script>
+
+
+/* =========================
+   Supabase 設定
+========================= */
+
+const SUPABASE_URL =
+  "https://ubrjcadpfdfymbjwubfg.supabase.co";
+
+
+const SUPABASE_KEY =
+  "sb_publishable_0J9AWhVkRRYDehVffrmNdQ_jlOOqVAw";
+
+
+const supabaseClient =
+  supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
+
+
+/* =========================
+   變數
+========================= */
+
+const currentNumberElement =
+  document.getElementById(
+    "currentNumber"
+  );
+
+
+const audioStartScreen =
+  document.getElementById(
+    "audioStartScreen"
+  );
+
+
+const startAudioButton =
+  document.getElementById(
+    "startAudioButton"
+  );
+
+
+let audioEnabled = false;
+
+
+/* 記錄最後一次叫號，避免重複播放 */
+
+let lastCalledNumber = null;
+
+
+
+/* =========================
+   啟動音效
+========================= */
+
+startAudioButton.addEventListener(
+  "click",
+  () => {
+
+    audioEnabled = true;
+
+
+    audioStartScreen.style.display =
+      "none";
+
+
+    /*
+      讓瀏覽器初始化語音功能
+    */
+
+    const testSpeech =
+      new SpeechSynthesisUtterance("");
+
+
+    testSpeech.lang =
+      "zh-TW";
+
+
+    window.speechSynthesis.speak(
+      testSpeech
+    );
+
+  }
+);
+
+
+
+/* =========================
+   讀取目前叫號
+========================= */
+
+async function loadCurrentNumber() {
+
+  const {
+
+    data,
+    error
+
+  } = await supabaseClient
+
+    .from("queue_settings")
+
+    .select("*")
+
+    .order(
+      "updated_at",
+      {
+        ascending: false
+      }
+    )
+
+    .limit(1)
+
+    .maybeSingle();
+
+
+
+  if (error) {
+
+    console.error(
+      "讀取目前叫號失敗：",
+      error
+    );
+
+    return;
+
+  }
+
+
+  if (
+
+    data &&
+    data.current_number
+
+  ) {
+
+    currentNumberElement.textContent =
+      data.current_number;
+
+
+    /*
+      網頁剛開啟時
+      只顯示目前號碼
+
+      不重新播放舊叫號
+    */
+
+    lastCalledNumber =
+      data.current_number;
+
+  }
+
+}
+
+
+
+/* =========================
+   更新叫號畫面
+========================= */
+
+function updateDisplay(number) {
+
+  currentNumberElement.textContent =
+    number;
+
+
+  /*
+    重新觸發動畫
+  */
+
+  currentNumberElement.classList.remove(
+    "announce"
+  );
+
+
+  void currentNumberElement.offsetWidth;
+
+
+  currentNumberElement.classList.add(
+    "announce"
+  );
+
+
+}
+
+
+
+/* =========================
+   語音叫號
+========================= */
+
+function speakNumber(number) {
+
+  if (!audioEnabled) {
+
+    return;
+
+  }
+
+
+  window.speechSynthesis.cancel();
+
+
+  /*
+    把 A005 改成比較容易唸的方式
+
+    A005
+    ↓
+    A 0 0 5
+  */
+
+  const characters =
+    number.split("").join(" ");
+
+
+  const message =
+    `請 ${characters} 號入場`;
+
+
+  const speech =
+    new SpeechSynthesisUtterance(
+      message
+    );
+
+
+  speech.lang =
+    "zh-TW";
+
+
+  speech.rate =
+    0.85;
+
+
+  speech.pitch =
+    1;
+
+
+  window.speechSynthesis.speak(
+    speech
+  );
+
+}
+
+
+
+/* =========================
+   Supabase 即時監聽
+========================= */
+
+const channel =
+  supabaseClient
+
+    .channel(
+      "display-queue-channel"
+    )
+
+
+    .on(
+
+      "postgres_changes",
+
+      {
+
+        event: "UPDATE",
+
+        schema: "public",
+
+        table: "queue_settings"
+
+      },
+
+
+      payload => {
+
+
+        const newNumber =
+          payload.new.current_number;
+
+
+        if (!newNumber) {
+
+          return;
+
+        }
+
+
+        /*
+          如果是新的號碼
+        */
+
+        if (
+
+          newNumber !==
+          lastCalledNumber
+
+        ) {
+
+
+          lastCalledNumber =
+            newNumber;
+
+
+          updateDisplay(
+            newNumber
+          );
+
+
+          speakNumber(
+            newNumber
+          );
+
+        }
+
+
+      }
+
+    )
+
+
+    .subscribe(
+      status => {
+
+        const statusElement =
+          document.getElementById(
+            "connectionStatus"
+          );
+
+
+        if (
+
+          status === "SUBSCRIBED"
+
+        ) {
+
+          statusElement.textContent =
+            "● 即時連線正常";
+
+        }
+
+      }
+
+    );
+
+
+
+/* =========================
+   網頁啟動
+========================= */
+
+loadCurrentNumber();
+
+
+</script>
+
+
+</body>
+
+</html>

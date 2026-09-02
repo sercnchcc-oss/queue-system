@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>入場取號系統</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family:
+        "Microsoft JhengHei",
+        "Noto Sans TC",
+        Arial,
+        sans-serif;
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      background: linear-gradient(135deg, #f5f7fa, #e4e9f0);
+    }
+
+    .container {
+      width: min(90%, 420px);
+      background: white;
+
+      padding: 40px 30px;
+      border-radius: 20px;
+
+      text-align: center;
+
+      box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 28px;
+    }
+
+    .description {
+      color: #666;
+      margin-bottom: 30px;
+    }
+
+    .ticket-number {
+      font-size: 72px;
+      font-weight: bold;
+
+      margin: 30px 0;
+
+      letter-spacing: 4px;
+    }
+
+    button {
+      width: 100%;
+
+      padding: 18px;
+
+      border: none;
+      border-radius: 12px;
+
+      font-size: 20px;
+      font-weight: bold;
+
+      cursor: pointer;
+
+      background: #2563eb;
+      color: white;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+
+    .status {
+      margin-top: 20px;
+      color: #666;
+    }
+
+    .loading {
+      display: none;
+      margin-top: 20px;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+
+</head>
+
+<body>
+
+  <div class="container">
+
+```
+<!-- 尚未取號 -->
+<div id="takeTicketSection">
+
+  <h1>🎫 入場取號</h1>
+
+  <p class="description">
+    點擊下方按鈕取得您的入場號碼
+  </p>
+
+  <button id="takeTicketButton">
+    取得號碼
+  </button>
+
+  <div class="loading" id="loading">
+    正在取得號碼...
+  </div>
+
+</div>
+
+
+<!-- 已經取號 -->
+<div id="ticketSection" class="hidden">
+
+  <h1>🎫 您的號碼</h1>
+
+  <div class="ticket-number" id="ticketNumber">
+    A001
+  </div>
+
+  <p class="status">
+    請耐心等待叫號
+  </p>
+
+  <p class="description">
+    請勿關閉此頁面
+  </p>
+
+</div>
+```
+
+  </div>
+
+<script>
+
+  // ================================
+  // Supabase 設定
+  // ================================
+
+  const SUPABASE_URL =
+    "https://ubrjcadpfdfymbjwubfg.supabase.co";
+
+  const SUPABASE_KEY =
+    "sb_publishable_0J9AWhVkRRYDehVffrmNdQ_jlOOqVAw";
+
+  const supabaseClient =
+    supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+
+  // ================================
+  // HTML 元素
+  // ================================
+
+  const takeTicketButton =
+    document.getElementById("takeTicketButton");
+
+  const loading =
+    document.getElementById("loading");
+
+  const takeTicketSection =
+    document.getElementById("takeTicketSection");
+
+  const ticketSection =
+    document.getElementById("ticketSection");
+
+  const ticketNumber =
+    document.getElementById("ticketNumber");
+
+
+  // ================================
+  // 檢查是否已經取過號
+  // ================================
+
+  const savedTicket =
+    localStorage.getItem("queue_ticket_number");
+
+  if (savedTicket) {
+
+    showTicket(savedTicket);
+
+  }
+
+
+  // ================================
+  // 顯示號碼
+  // ================================
+
+  function showTicket(number) {
+
+    takeTicketSection.classList.add("hidden");
+
+    ticketSection.classList.remove("hidden");
+
+    ticketNumber.textContent = number;
+
+  }
+
+
+  // ================================
+  // 取得號碼
+  // ================================
+
+  takeTicketButton.addEventListener(
+    "click",
+    async () => {
+
+      // 避免重複點擊
+      takeTicketButton.disabled = true;
+
+      loading.style.display = "block";
+
+
+      try {
+
+        // 呼叫 Supabase Function
+        const {
+
+          data,
+          error
+
+        } = await supabaseClient.rpc(
+          "take_ticket"
+        );
+
+
+        if (error) {
+          throw error;
+        }
+
+
+        // Function 回傳資料
+        const ticket = data[0];
+
+
+        // 儲存到手機瀏覽器
+        localStorage.setItem(
+          "queue_ticket_number",
+          ticket.display_number
+        );
+
+
+        // 顯示號碼
+        showTicket(
+          ticket.display_number
+        );
+
+
+      }
+
+      catch (error) {
+
+        console.error(error);
+
+        alert(
+          "取得號碼失敗，請稍後再試"
+        );
+
+        takeTicketButton.disabled = false;
+
+      }
+
+
+      finally {
+
+        loading.style.display = "none";
+
+      }
+
+    }
+  );
+
+</script>
+
+</body>
+</html>
