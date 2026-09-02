@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="zh-Hant">
 
 <head>
@@ -164,7 +165,7 @@
 
 
     /* =========================
-       動畫
+       叫號動畫
     ========================= */
 
     .announce {
@@ -388,6 +389,10 @@
 
 
 
+<!-- =========================
+     連線狀態
+========================= -->
+
 <div
   id="connectionStatus"
   class="connection-status"
@@ -423,7 +428,7 @@ const supabaseClient =
 
 
 /* =========================
-   變數
+   HTML 元素
 ========================= */
 
 const currentNumberElement =
@@ -444,17 +449,36 @@ const startAudioButton =
   );
 
 
+const connectionStatus =
+  document.getElementById(
+    "connectionStatus"
+  );
+
+
+
+/* =========================
+   系統變數
+========================= */
+
 let audioEnabled = false;
 
 
-/* 記錄最後一次叫號，避免重複播放 */
+/*
+  記錄最後一次叫號
+
+  用來避免：
+
+  UPDATE 同一個號碼
+  ↓
+  重複播放語音
+*/
 
 let lastCalledNumber = null;
 
 
 
 /* =========================
-   啟動音效
+   啟動語音系統
 ========================= */
 
 startAudioButton.addEventListener(
@@ -469,11 +493,16 @@ startAudioButton.addEventListener(
 
 
     /*
-      讓瀏覽器初始化語音功能
+      初始化瀏覽器語音
+
+      因為 Chrome / Edge
+      通常需要使用者先互動
     */
 
     const testSpeech =
-      new SpeechSynthesisUtterance("");
+      new SpeechSynthesisUtterance(
+        ""
+      );
 
 
     testSpeech.lang =
@@ -486,6 +515,27 @@ startAudioButton.addEventListener(
 
   }
 );
+
+
+
+/* =========================
+   顯示等待叫號
+========================= */
+
+function showWaiting() {
+
+  currentNumberElement.textContent =
+    "等待叫號";
+
+
+  currentNumberElement.classList.remove(
+    "announce"
+  );
+
+
+  lastCalledNumber = null;
+
+}
 
 
 
@@ -526,35 +576,57 @@ async function loadCurrentNumber() {
       error
     );
 
+
+    connectionStatus.textContent =
+      "● 資料讀取失敗";
+
+
     return;
 
   }
 
 
+  /*
+    有目前叫號
+  */
+
   if (
 
-  data &&
-  data.current_number
+    data &&
+    data.current_number
 
-) {
-
-  currentNumberElement.textContent =
-    data.current_number;
+  ) {
 
 
-  lastCalledNumber =
-    data.current_number;
+    currentNumberElement.textContent =
+      data.current_number;
 
 
-} else {
+    /*
+      網頁剛開啟時
+      不播放舊叫號
+    */
+
+    lastCalledNumber =
+      data.current_number;
 
 
-  currentNumberElement.textContent =
-    "等待叫號";
+  }
+
+  else {
 
 
-  lastCalledNumber =
-    null;
+    /*
+      沒有叫號資料
+
+      例如：
+
+      後台剛清空所有號碼
+    */
+
+    showWaiting();
+
+  }
 
 }
 
@@ -586,7 +658,6 @@ function updateDisplay(number) {
     "announce"
   );
 
-
 }
 
 
@@ -604,23 +675,34 @@ function speakNumber(number) {
   }
 
 
+  /*
+    停止前一次語音
+  */
+
   window.speechSynthesis.cancel();
 
 
-  /*
-    把 A005 改成比較容易唸的方式
 
+  /*
     A005
-    ↓
+
+    變成：
+
     A 0 0 5
+
+    讓語音比較容易正確唸出來
   */
 
   const characters =
-    number.split("").join(" ");
+    number
+      .split("")
+      .join(" ");
+
 
 
   const message =
     `請 ${characters} 號入場`;
+
 
 
   const speech =
@@ -641,6 +723,7 @@ function speakNumber(number) {
     1;
 
 
+
   window.speechSynthesis.speak(
     speech
   );
@@ -654,6 +737,7 @@ function speakNumber(number) {
 ========================= */
 
 const channel =
+
   supabaseClient
 
     .channel(
@@ -680,60 +764,64 @@ const channel =
 
 
         const newNumber =
-  payload.new.current_number;
+          payload.new.current_number;
 
 
-// ================================
-// 如果後台清空目前叫號
-// ================================
 
-if (!newNumber) {
+        /* =========================
+           後台清空叫號
+        ========================= */
 
-
-  lastCalledNumber =
-    null;
+        if (!newNumber) {
 
 
-  currentNumberElement.textContent =
-    "等待叫號";
+          showWaiting();
 
 
-  currentNumberElement.classList.remove(
-    "announce"
-  );
+          /*
+            清空時不播放語音
+          */
+
+          return;
+
+        }
 
 
-  return;
 
-}
+        /* =========================
+           新的叫號
+        ========================= */
 
+        if (
 
-// ================================
-// 如果是新的號碼
-// ================================
+          newNumber !==
+          lastCalledNumber
 
-if (
-
-  newNumber !==
-  lastCalledNumber
-
-) {
+        ) {
 
 
-  lastCalledNumber =
-    newNumber;
+          lastCalledNumber =
+            newNumber;
 
 
-  updateDisplay(
-    newNumber
-  );
+          /*
+            更新大螢幕
+          */
+
+          updateDisplay(
+            newNumber
+          );
 
 
-  speakNumber(
-    newNumber
-  );
+          /*
+            播放語音
+          */
 
-}
+          speakNumber(
+            newNumber
+          );
+
+        }
 
 
       }
@@ -742,12 +830,8 @@ if (
 
 
     .subscribe(
-      status => {
 
-        const statusElement =
-          document.getElementById(
-            "connectionStatus"
-          );
+      status => {
 
 
         if (
@@ -756,8 +840,48 @@ if (
 
         ) {
 
-          statusElement.textContent =
+
+          connectionStatus.textContent =
             "● 即時連線正常";
+
+        }
+
+
+        else if (
+
+          status === "CHANNEL_ERROR"
+
+        ) {
+
+
+          connectionStatus.textContent =
+            "● 即時連線錯誤";
+
+        }
+
+
+        else if (
+
+          status === "TIMED_OUT"
+
+        ) {
+
+
+          connectionStatus.textContent =
+            "● 連線逾時";
+
+        }
+
+
+        else if (
+
+          status === "CLOSED"
+
+        ) {
+
+
+          connectionStatus.textContent =
+            "● 連線已關閉";
 
         }
 
