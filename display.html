@@ -533,26 +533,28 @@ async function loadCurrentNumber() {
 
   if (
 
-    data &&
-    data.current_number
+  data &&
+  data.current_number
 
-  ) {
+) {
 
-    currentNumberElement.textContent =
-      data.current_number;
+  currentNumberElement.textContent =
+    data.current_number;
 
 
-    /*
-      網頁剛開啟時
-      只顯示目前號碼
+  lastCalledNumber =
+    data.current_number;
 
-      不重新播放舊叫號
-    */
 
-    lastCalledNumber =
-      data.current_number;
+} else {
 
-  }
+
+  currentNumberElement.textContent =
+    "等待叫號";
+
+
+  lastCalledNumber =
+    null;
 
 }
 
@@ -678,42 +680,60 @@ const channel =
 
 
         const newNumber =
-          payload.new.current_number;
+  payload.new.current_number;
 
 
-        if (!newNumber) {
+// ================================
+// 如果後台清空目前叫號
+// ================================
 
-          return;
-
-        }
-
-
-        /*
-          如果是新的號碼
-        */
-
-        if (
-
-          newNumber !==
-          lastCalledNumber
-
-        ) {
+if (!newNumber) {
 
 
-          lastCalledNumber =
-            newNumber;
+  lastCalledNumber =
+    null;
 
 
-          updateDisplay(
-            newNumber
-          );
+  currentNumberElement.textContent =
+    "等待叫號";
 
 
-          speakNumber(
-            newNumber
-          );
+  currentNumberElement.classList.remove(
+    "announce"
+  );
 
-        }
+
+  return;
+
+}
+
+
+// ================================
+// 如果是新的號碼
+// ================================
+
+if (
+
+  newNumber !==
+  lastCalledNumber
+
+) {
+
+
+  lastCalledNumber =
+    newNumber;
+
+
+  updateDisplay(
+    newNumber
+  );
+
+
+  speakNumber(
+    newNumber
+  );
+
+}
 
 
       }
