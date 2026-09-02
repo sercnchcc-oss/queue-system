@@ -69,7 +69,9 @@
     }
 
 
-    /* 目前叫號 */
+    /* =========================
+       目前叫號
+    ========================= */
 
     .current-call {
 
@@ -100,7 +102,9 @@
     }
 
 
-    /* 控制按鈕 */
+    /* =========================
+       控制按鈕
+    ========================= */
 
     .controls {
 
@@ -152,21 +156,16 @@
     }
 
 
-    .refresh:hover {
+    button:hover {
 
       opacity: .85;
 
     }
 
 
-    .reset:hover {
-
-      opacity: .85;
-
-    }
-
-
-    /* 狀態 */
+    /* =========================
+       狀態訊息
+    ========================= */
 
     .status-message {
 
@@ -179,7 +178,9 @@
     }
 
 
-    /* 號碼列表 */
+    /* =========================
+       號碼列表
+    ========================= */
 
     .ticket-grid {
 
@@ -276,7 +277,9 @@
   </p>
 
 
-  <!-- 目前叫號 -->
+  <!-- =========================
+       目前叫號
+  ========================= -->
 
   <div class="current-call">
 
@@ -295,14 +298,16 @@
   </div>
 
 
-  <!-- 控制按鈕 -->
+  <!-- =========================
+       控制按鈕
+  ========================= -->
 
   <div class="controls">
 
 
     <button
       class="refresh"
-      onclick="loadTickets()"
+      onclick="refreshAll()"
     >
       🔄 重新整理
     </button>
@@ -310,7 +315,7 @@
 
     <button
       class="reset"
-      onclick="resetQueue()"
+      onclick="clearAllTickets()"
     >
       🗑️ 清空所有號碼
     </button>
@@ -344,346 +349,302 @@
 <script>
 
 
-  // =================================
-  // Supabase 設定
-  // =================================
+/* ================================
+   Supabase 設定
+================================ */
 
+const SUPABASE_URL =
+  "https://ubrjcadpfdfymbjwubfg.supabase.co";
 
-  const SUPABASE_URL =
-    "https://ubrjcadpfdfymbjwubfg.supabase.co";
 
+const SUPABASE_KEY =
+  "sb_publishable_0J9AWhVkRRYDehVffrmNdQ_jlOOqVAw";
 
-  const SUPABASE_KEY =
-    "sb_publishable_0J9AWhVkRRYDehVffrmNdQ_jlOOqVAw";
 
-
-  const supabaseClient =
-    supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_KEY
-    );
-
-
-
-  // =================================
-  // 讀取等待中的號碼
-  // =================================
-
-
-  async function loadTickets() {
-
-
-    const ticketList =
-      document.getElementById(
-        "ticketList"
-      );
-
-
-    const statusMessage =
-      document.getElementById(
-        "statusMessage"
-      );
-
-
-    ticketList.innerHTML = "";
-
-
-    statusMessage.textContent =
-      "載入中...";
-
-
-    const {
-
-      data,
-
-      error
-
-    } = await supabaseClient
-
-      .from("tickets")
-
-      .select("*")
-
-      .eq(
-        "status",
-        "waiting"
-      )
-
-      .order(
-        "ticket_number",
-        {
-          ascending: true
-        }
-      );
-
-
-
-    if (error) {
-
-
-      console.error(error);
-
-
-      ticketList.innerHTML = `
-
-        <div class="empty">
-
-          ❌ 讀取資料失敗
-
-          <br><br>
-
-          ${error.message}
-
-        </div>
-
-      `;
-
-
-      statusMessage.textContent = "";
-
-
-      return;
-
-    }
-
-
-
-    ticketList.innerHTML = "";
-
-
-    statusMessage.textContent =
-      `目前共有 ${data.length} 位等待中`;
-
-
-
-    if (data.length === 0) {
-
-
-      ticketList.innerHTML = `
-
-        <div class="empty">
-
-          目前沒有等待中的號碼
-
-        </div>
-
-      `;
-
-
-      return;
-
-    }
-
-
-
-    data.forEach(
-      ticket => {
-
-
-        const button =
-          document.createElement(
-            "button"
-          );
-
-
-        button.className =
-          "ticket";
-
-
-        button.innerHTML = `
-
-          ${ticket.display_number}
-
-          <small>
-            點擊叫號 🔊
-          </small>
-
-        `;
-
-
-        button.addEventListener(
-
-          "click",
-
-          () => callTicket(ticket)
-
-        );
-
-
-        ticketList.appendChild(
-          button
-        );
-
-
-      }
-    );
-
-
-  }
-
-
-
-  // =================================
-  // 讀取目前叫號
-  // =================================
-
-
-  async function loadCurrentNumber() {
-
-
-    const {
-
-      data,
-
-      error
-
-    } = await supabaseClient
-
-      .from("queue_settings")
-
-      .select("*")
-
-      .limit(1)
-
-      .maybeSingle();
-
-
-
-    if (error) {
-
-      console.error(error);
-
-      return;
-
-    }
-
-
-
-    const currentNumberElement =
-      document.getElementById(
-        "currentNumber"
-      );
-
-
-    if (
-      data &&
-      data.current_number
-    ) {
-
-      currentNumberElement.textContent =
-        data.current_number;
-
-    }
-
-    else {
-
-      currentNumberElement.textContent =
-        "尚未叫號";
-
-    }
-
-
-  }
-
-
-
-  // =================================
-  // 叫號
-  // =================================
-
-
-  async function callTicket(ticket) {
-
-
-    const confirmed =
-      confirm(
-        `確定要叫號 ${ticket.display_number} 嗎？`
-      );
-
-
-    if (!confirmed) return;
-
-
-
-    const {
-
-      error
-
-    } = await supabaseClient.rpc(
-
-      "call_ticket",
-
-      {
-
-        target_ticket_id:
-          ticket.id
-
-      }
-
-    );
-
-
-
-    if (error) {
-
-
-      console.error(error);
-
-
-      alert(
-        "叫號失敗：\n" +
-        error.message
-      );
-
-
-      return;
-
-    }
-
-
-
-    document
-      .getElementById(
-        "currentNumber"
-      )
-      .textContent =
-        ticket.display_number;
-
-
-
-    loadTickets();
-
-
-  }
-
-
-
-  // ================================
-// 清空所有號碼
-// ================================
-
-async function clearAllTickets() {
-
-  const confirmed = confirm(
-    "⚠️ 確定要清空目前所有號碼嗎？\n\n清空後下一個號碼將重新從 A001 開始。"
+const supabaseClient =
+  supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
   );
 
-  if (!confirmed) return;
 
+/* ================================
+   取得目前啟用活動
+================================ */
+
+async function getActiveEvent() {
 
   const {
+
+    data,
+
     error
-  } = await supabaseClient.rpc(
-    "clear_all_tickets"
-  );
+
+  } = await supabaseClient
+
+    .from("events")
+
+    .select("id")
+
+    .eq(
+      "is_active",
+      true
+    )
+
+    .order(
+      "created_at",
+      {
+        ascending: false
+      }
+    )
+
+    .limit(1)
+
+    .maybeSingle();
 
 
   if (error) {
 
-    console.error(error);
+    console.error(
+      "讀取活動失敗：",
+      error
+    );
 
-    alert(
-      "清空失敗：" + error.message
+    return null;
+
+  }
+
+
+  return data;
+
+}
+
+
+/* ================================
+   讀取等待中的號碼
+================================ */
+
+async function loadTickets() {
+
+
+  const ticketList =
+    document.getElementById(
+      "ticketList"
+    );
+
+
+  const statusMessage =
+    document.getElementById(
+      "statusMessage"
+    );
+
+
+  ticketList.innerHTML = "";
+
+
+  statusMessage.textContent =
+    "載入中...";
+
+
+  /* 取得目前活動 */
+
+  const activeEvent =
+    await getActiveEvent();
+
+
+  if (!activeEvent) {
+
+    statusMessage.textContent =
+      "目前沒有啟用中的活動";
+
+
+    ticketList.innerHTML = `
+
+      <div class="empty">
+
+        目前沒有啟用中的活動
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  /* 讀取該活動的等待號碼 */
+
+  const {
+
+    data,
+
+    error
+
+  } = await supabaseClient
+
+    .from("tickets")
+
+    .select("*")
+
+    .eq(
+      "event_id",
+      activeEvent.id
+    )
+
+    .eq(
+      "status",
+      "waiting"
+    )
+
+    .order(
+      "ticket_number",
+      {
+        ascending: true
+      }
+    );
+
+
+  if (error) {
+
+
+    console.error(
+      "讀取號碼失敗：",
+      error
+    );
+
+
+    ticketList.innerHTML = `
+
+      <div class="empty">
+
+        ❌ 讀取資料失敗
+
+        <br><br>
+
+        ${error.message}
+
+      </div>
+
+    `;
+
+
+    statusMessage.textContent = "";
+
+
+    return;
+
+  }
+
+
+  ticketList.innerHTML = "";
+
+
+  statusMessage.textContent =
+    `目前共有 ${data.length} 位等待中`;
+
+
+  if (data.length === 0) {
+
+
+    ticketList.innerHTML = `
+
+      <div class="empty">
+
+        目前沒有等待中的號碼
+
+      </div>
+
+    `;
+
+
+    return;
+
+  }
+
+
+  data.forEach(
+    ticket => {
+
+
+      const button =
+        document.createElement(
+          "button"
+        );
+
+
+      button.className =
+        "ticket";
+
+
+      button.innerHTML = `
+
+        ${ticket.display_number}
+
+        <small>
+          點擊叫號 🔊
+        </small>
+
+      `;
+
+
+      button.addEventListener(
+
+        "click",
+
+        () => callTicket(ticket)
+
+      );
+
+
+      ticketList.appendChild(
+        button
+      );
+
+
+    }
+  );
+
+
+}
+
+
+/* ================================
+   讀取目前叫號
+================================ */
+
+async function loadCurrentNumber() {
+
+
+  const {
+
+    data,
+
+    error
+
+  } = await supabaseClient
+
+    .from("queue_settings")
+
+    .select("*")
+
+    .order(
+      "updated_at",
+      {
+        ascending: false
+      }
+    )
+
+    .limit(1)
+
+    .maybeSingle();
+
+
+  if (error) {
+
+    console.error(
+      "讀取目前叫號失敗：",
+      error
     );
 
     return;
@@ -691,128 +652,305 @@ async function clearAllTickets() {
   }
 
 
-  // 清空目前叫號畫面
-
-  document.getElementById(
-    "currentNumber"
-  ).textContent =
-    "尚未叫號";
+  const currentNumberElement =
+    document.getElementById(
+      "currentNumber"
+    );
 
 
-  // 重新讀取等待中的號碼
+  if (
+
+    data &&
+    data.current_number
+
+  ) {
+
+
+    currentNumberElement.textContent =
+      data.current_number;
+
+  }
+
+  else {
+
+
+    currentNumberElement.textContent =
+      "尚未叫號";
+
+  }
+
+
+}
+
+
+/* ================================
+   叫號
+================================ */
+
+async function callTicket(ticket) {
+
+
+  const confirmed =
+    confirm(
+      `確定要叫號 ${ticket.display_number} 嗎？`
+    );
+
+
+  if (!confirmed) {
+
+    return;
+
+  }
+
+
+  const {
+
+    error
+
+  } = await supabaseClient.rpc(
+
+    "call_ticket",
+
+    {
+
+      target_ticket_id:
+        ticket.id
+
+    }
+
+  );
+
+
+  if (error) {
+
+
+    console.error(
+      "叫號失敗：",
+      error
+    );
+
+
+    alert(
+      "叫號失敗：\n" +
+      error.message
+    );
+
+
+    return;
+
+  }
+
+
+  /* 立即更新畫面 */
+
+  document
+    .getElementById(
+      "currentNumber"
+    )
+    .textContent =
+      ticket.display_number;
+
+
+  /* 重新讀取 */
 
   await loadTickets();
+
+  await loadCurrentNumber();
+
+
+}
+
+
+/* ================================
+   清空所有號碼
+================================ */
+
+async function clearAllTickets() {
+
+
+  const confirmed =
+    confirm(
+      "⚠️ 確定要清空目前所有號碼嗎？\n\n清空後下一個號碼將重新從 A001 開始。"
+    );
+
+
+  if (!confirmed) {
+
+    return;
+
+  }
+
+
+  const {
+
+    error
+
+  } = await supabaseClient.rpc(
+    "clear_all_tickets"
+  );
+
+
+  if (error) {
+
+
+    console.error(
+      "清空失敗：",
+      error
+    );
+
+
+    alert(
+      "清空失敗：\n" +
+      error.message
+    );
+
+
+    return;
+
+  }
+
+
+  /* 清空目前叫號畫面 */
+
+  document
+    .getElementById(
+      "currentNumber"
+    )
+    .textContent =
+      "尚未叫號";
+
+
+  /* 重新讀取 */
+
+  await loadTickets();
+
+  await loadCurrentNumber();
 
 
   alert(
     "✅ 所有號碼已成功清空"
   );
 
+
 }
 
 
+/* ================================
+   手動重新整理
+================================ */
 
-    // 更新畫面
+async function refreshAll() {
 
+  await loadTickets();
 
-    document
-      .getElementById(
-        "currentNumber"
-      )
-      .textContent =
-        "尚未叫號";
+  await loadCurrentNumber();
 
-
-    loadTickets();
+}
 
 
-  }
+/* ================================
+   Tickets 即時同步
+================================ */
+
+supabaseClient
+
+  .channel(
+    "tickets-channel"
+  )
+
+  .on(
+
+    "postgres_changes",
+
+    {
+
+      event: "*",
+
+      schema: "public",
+
+      table: "tickets"
+
+    },
+
+    () => {
+
+      console.log(
+        "Tickets 資料更新"
+      );
 
 
+      loadTickets();
 
-  // =================================
-  // Tickets 即時同步
-  // =================================
+    }
 
+  )
 
-  supabaseClient
+  .subscribe(
+    status => {
 
-    .channel(
-      "tickets-channel"
-    )
+      console.log(
+        "Tickets 即時連線：",
+        status
+      );
 
-    .on(
-
-      "postgres_changes",
-
-      {
-
-        event: "*",
-
-        schema: "public",
-
-        table: "tickets"
-
-      },
-
-      () => {
-
-        loadTickets();
-
-      }
-
-    )
-
-    .subscribe();
+    }
+  );
 
 
+/* ================================
+   Queue 即時同步
+================================ */
 
-  // =================================
-  // 目前叫號即時同步
-  // =================================
+supabaseClient
 
+  .channel(
+    "queue-channel"
+  )
 
-  supabaseClient
+  .on(
 
-    .channel(
-      "queue-channel"
-    )
+    "postgres_changes",
 
-    .on(
+    {
 
-      "postgres_changes",
+      event: "*",
 
-      {
+      schema: "public",
 
-        event: "*",
+      table: "queue_settings"
 
-        schema: "public",
+    },
 
-        table: "queue_settings"
+    () => {
 
-      },
-
-      () => {
-
-        loadCurrentNumber();
-
-      }
-
-    )
-
-    .subscribe();
+      console.log(
+        "目前叫號資料更新"
+      );
 
 
+      loadCurrentNumber();
 
-  // =================================
-  // 網頁啟動
-  // =================================
+    }
+
+  )
+
+  .subscribe(
+    status => {
+
+      console.log(
+        "Queue 即時連線：",
+        status
+      );
+
+    }
+  );
 
 
-  loadTickets();
+/* ================================
+   網頁啟動
+================================ */
 
-
-  loadCurrentNumber();
+refreshAll();
 
 
 </script>
